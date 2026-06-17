@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UGS DISC診断</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --brand:#F5821F; --brand2:#FF9D3C; --brand-dark:#D96B00; --brand-soft:#FFEFDD;
+    --d:#E2574C; --i:#E8A020; --s:#3AA66B; --c:#3F7FD1;
+    --ink:#2a2018; --sub:#857467; --line:#efe5db; --bg:#fbf6f0; --card:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    margin:0;background:var(--bg);color:var(--ink);line-height:1.65;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .wrap{max-width:880px;margin:0 auto;padding:22px 16px 90px}
+  /* hero */
+  header.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#ED6F12 0%,#FF9D3C 100%);
+    color:#fff;border-radius:20px;padding:30px 28px;margin-bottom:18px;box-shadow:0 14px 34px rgba(237,111,18,.28)}
+  header.hero::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;
+    background:rgba(255,255,255,.12)}
+  header.hero::before{content:"";position:absolute;right:60px;bottom:-60px;width:140px;height:140px;border-radius:50%;
+    background:rgba(255,255,255,.08)}
+  header.hero .tag{display:inline-block;font-size:11px;letter-spacing:.18em;font-weight:700;background:rgba(255,255,255,.22);
+    padding:4px 12px;border-radius:999px;margin-bottom:12px}
+  header.hero h1{margin:0 0 8px;font-size:27px;font-weight:800;letter-spacing:.02em}
+  header.hero p{margin:0;opacity:.95;font-size:14px;max-width:580px}
+  /* note */
+  .note{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;
+    font-size:14px;color:var(--sub);box-shadow:0 4px 14px rgba(180,140,90,.06)}
+  .note b{color:var(--ink)}
+  .note .howto{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .note .howto .pill{flex:1;min-width:200px;background:var(--brand-soft);border-radius:12px;padding:10px 14px;color:var(--ink);font-size:13px}
+  .note .howto .pill b{display:block;color:var(--brand-dark);margin-bottom:2px}
+  /* question card */
+  .q{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:14px;
+    box-shadow:0 4px 14px rgba(180,140,90,.06);transition:box-shadow .2s}
+  .q:hover{box-shadow:0 8px 22px rgba(180,140,90,.12)}
+  .q .qno{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ED6F12,#FF9D3C);
+    color:#fff;border-radius:10px;min-width:42px;height:28px;font-size:13px;font-weight:800;margin-bottom:12px;padding:0 8px}
+  .pickhead{display:grid;grid-template-columns:96px 96px 1fr;gap:8px;align-items:end;margin-bottom:4px;padding:0 4px}
+  .pickhead .h{font-size:12px;font-weight:800;text-align:center;border-radius:8px;padding:5px 4px;line-height:1.3}
+  .pickhead .h.most{background:var(--brand-soft);color:var(--brand-dark)}
+  .pickhead .h.least{background:#eef1f4;color:#5d6b7a}
+  .opt{display:grid;grid-template-columns:96px 96px 1fr;gap:8px;align-items:center;padding:8px 4px;border-top:1px dashed var(--line)}
+  .opt:first-of-type{border-top:none}
+  .opt .cell{display:flex;justify-content:center}
+  .opt input{width:22px;height:22px;cursor:pointer;margin:0}
+  .opt input.most{accent-color:var(--brand)}
+  .opt input.least{accent-color:#9aa7b4}
+  .opt .txt{font-size:16px;font-weight:600;transition:.15s}
+  .opt.is-most .txt{color:var(--brand-dark)}
+  .opt.is-least .txt{color:#b7b0a8;text-decoration:line-through}
+  /* controls */
+  .controls{position:sticky;bottom:0;z-index:5;background:linear-gradient(180deg,rgba(251,246,240,0),rgba(251,246,240,.96) 30%);
+    padding:16px 0 8px;margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  button{font-family:inherit;font-size:15px;font-weight:800;border:none;border-radius:12px;padding:13px 26px;cursor:pointer;transition:.15s}
+  .btn-primary{background:linear-gradient(135deg,#ED6F12,#FF9D3C);color:#fff;box-shadow:0 8px 20px rgba(237,111,18,.32)}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 24px rgba(237,111,18,.4)}
+  .btn-ghost{background:#fff;color:var(--brand-dark);border:2px solid var(--brand)}
+  .btn-ghost:hover{background:var(--brand-soft)}
+  .progress{font-size:13px;color:var(--sub);font-weight:700}
+  .err{color:#d1495b;font-size:13px;font-weight:800}
+  /* result */
+  #result{display:none}
+  .rcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:16px;
+    box-shadow:0 8px 26px rgba(180,140,90,.10)}
+  .namerow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  .namerow input{font-family:inherit;font-size:15px;padding:10px 14px;border:1.5px solid var(--line);border-radius:10px;min-width:200px}
+  .namerow input:focus{outline:none;border-color:var(--brand)}
+  .typewrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:6px}
+  .typebadge{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:130px;height:130px;
+    border-radius:24px;background:linear-gradient(135deg,#ED6F12,#FF9D3C);color:#fff;box-shadow:0 10px 26px rgba(237,111,18,.3)}
+  .typebadge .code{font-size:46px;font-weight:900;letter-spacing:.04em;line-height:1}
+  .typebadge .lbl{font-size:12px;font-weight:700;opacity:.92;margin-top:6px}
+  .typemeta .big{font-size:22px;font-weight:800}
+  .typemeta .sub{font-size:14px;color:var(--sub);margin-top:4px}
+  .typemeta .motive{display:inline-block;margin-top:10px;background:var(--brand-soft);color:var(--brand-dark);
+    font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px}
+  .bars{margin:20px 0 4px}
+  .bar{display:grid;grid-template-columns:120px 1fr 92px;align-items:center;gap:12px;margin:9px 0}
+  .bar .name{font-weight:800;font-size:14px}
+  .bar .track{background:#f0eae3;border-radius:999px;height:22px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:999px;transition:width .7s ease}
+  .bar .val{font-size:12px;text-align:right;color:var(--sub);font-weight:700}
+  .fill.D{background:var(--d)} .fill.I{background:var(--i)} .fill.S{background:var(--s)} .fill.C{background:var(--c)}
+  .name.D{color:var(--d)} .name.I{color:var(--i)} .name.S{color:var(--s)} .name.C{color:var(--c)}
+  .sec-title{font-size:16px;font-weight:800;margin:6px 0 12px;padding-left:12px;border-left:5px solid var(--brand)}
+  .kv{font-size:14px;margin:8px 0;display:grid;grid-template-columns:140px 1fr;gap:8px}
+  .kv b{color:var(--brand-dark)}
+  table.mini{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;overflow:hidden;border-radius:10px}
+  table.mini th,table.mini td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  table.mini th{background:var(--brand-soft);color:var(--brand-dark);font-weight:800}
+  .foot{font-size:12px;color:var(--sub);text-align:center;margin-top:26px}
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#2a2018;color:#fff;
+    padding:12px 22px;border-radius:999px;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:50}
+  #toast.show{opacity:1}
+  @media print{ .noprint{display:none!important} body{background:#fff} .wrap{max-width:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <span class="tag">UGS DISC ASSESSMENT</span>
+    <h1>DISC診断</h1>
+    <p>あなたの行動タイプ（D / I / S / C）を知り、自分の動かし方と、相手への合わせ方をつかむ。所要 約5分・全24問。</p>
+  </header>
+
+  <div class="note noprint">
+    各問の4つの言葉について、<b>「最も適している言葉」を1つ</b>と<b>「最も遠い言葉」を1つ</b>選んでください。
+    <div class="howto">
+      <div class="pill"><b>◎ 最も適している</b>4つの中で一番あなたらしい言葉</div>
+      <div class="pill"><b>△ 最も遠い</b>4つの中で一番あなたから遠い言葉</div>
+    </div>
+  </div>
+
+  <form id="quiz" class="questions"></form>
+
+  <div class="controls noprint">
+    <button type="button" class="btn-primary" onclick="diagnose()">診断する</button>
+    <span id="progress" class="progress"></span>
+    <span id="err" class="err"></span>
+  </div>
+
+  <section id="result">
+    <div class="rcard">
+      <div class="namerow noprint">
+        <input id="uname" placeholder="氏名（任意・レポートに表示）">
+        <button type="button" class="btn-primary" onclick="savePdf()">PDFで保存</button>
+        <button type="button" class="btn-ghost" onclick="reset_()">もう一度</button>
+      </div>
+      <div id="rname" style="font-size:13px;color:var(--sub);font-weight:700"></div>
+      <div class="typewrap" style="margin-top:8px">
+        <div class="typebadge"><div class="code" id="tcode">--</div><div class="lbl">タイプ</div></div>
+        <div class="typemeta">
+          <div class="big" id="tbig"></div>
+          <div class="sub" id="tsub"></div>
+          <div class="motive" id="tmotive"></div>
+        </div>
+      </div>
+      <div class="bars" id="bars"></div>
+    </div>
+
+    <div class="rcard" id="rmain"></div>
+
+    <div class="rcard">
+      <div class="sec-title">他者理解：4タイプへの接し方 早見表</div>
+      <table class="mini">
+        <tr><th>相手</th><th>入り方</th><th>刺さる言葉</th><th>避ける</th></tr>
+        <tr><td><b style="color:var(--d)">D 主導</b></td><td>結論から・時間を取らせない</td><td>「最短で」「効率的」「得する」</td><td>だらだら世間話・回りくどさ</td></tr>
+        <tr><td><b style="color:var(--i)">I 感化</b></td><td>明るく雑談から・テンション合わせ</td><td>「面白い」「一緒に」「盛り上がる」</td><td>理屈攻め・細かい数字の羅列</td></tr>
+        <tr><td><b style="color:var(--s)">S 安定</b></td><td>安心感・ゆっくり・無理させない</td><td>「安心」「少しずつ」「サポートする」</td><td>急かす・即決を迫る</td></tr>
+        <tr><td><b style="color:var(--c)">C 慎重</b></td><td>根拠・順序立てて・比較材料</td><td>「正確に」「根拠は」「リスクは」</td><td>曖昧さ・感情論・押し売り</td></tr>
+      </table>
+    </div>
+    <div class="foot">UGS DISC診断 ／ 結果は行動スタイルの傾向であり、優劣・固定の性格を示すものではありません。</div>
+  </section>
+</div>
+<div id="toast"></div>
+
+<script>
+const DIMS=["D","I","S","C"];
+const DIMNAME={D:"主導",I:"感化",S:"安定",C:"慎重"};
+const Q=[
+ {D:"決断が速い",I:"社交的",S:"協力的",C:"正確"},
+ {D:"結果を重視する",I:"楽観的",S:"忍耐強い",C:"慎重"},
+ {D:"自信がある",I:"話し好き",S:"穏やか",C:"論理的"},
+ {D:"負けず嫌い",I:"明るい",S:"聞き上手",C:"几帳面"},
+ {D:"単刀直入",I:"表情が豊か",S:"控えめ",C:"分析的"},
+ {D:"行動が速い",I:"人を巻き込む",S:"安定志向",C:"計画的"},
+ {D:"主導権を取る",I:"場を盛り上げる",S:"和を大切にする",C:"データを重視する"},
+ {D:"挑戦的",I:"親しみやすい",S:"思いやりがある",C:"緻密"},
+ {D:"効率を優先する",I:"ノリがいい",S:"マイペース",C:"完璧を求める"},
+ {D:"決断力がある",I:"楽しいこと好き",S:"争いを避ける",C:"冷静"},
+ {D:"はっきり言う",I:"感情表現が豊か",S:"受け身",C:"客観的"},
+ {D:"目標にこだわる",I:"人気がある",S:"協調的",C:"ルールを守る"},
+ {D:"度胸がある",I:"説得が得意",S:"誠実",C:"注意深い"},
+ {D:"せっかち",I:"おしゃべり",S:"のんびり",C:"理屈で考える"},
+ {D:"リーダー役が多い",I:"ムードメーカー",S:"サポート役が多い",C:"物事を精査する"},
+ {D:"競争を好む",I:"新しい出会いが好き",S:"変化が苦手",C:"根拠を求める"},
+ {D:"自分で決めたい",I:"認められたい",S:"安心したい",C:"納得したい"},
+ {D:"強気",I:"気さく",S:"気が長い",C:"用心深い"},
+ {D:"仕切るのが得意",I:"注目を集める",S:"人に寄り添う",C:"検証する"},
+ {D:"結論から話す",I:"雑談から入る",S:"相手に合わせる",C:"順序立てて話す"},
+ {D:"大胆",I:"楽天的",S:"縁の下の力持ち",C:"ミスに気づきやすい"},
+ {D:"即断即決",I:"直感で動く",S:"じっくり決める",C:"調べてから動く"},
+ {D:"成果を出す",I:"人を楽しませる",S:"信頼される",C:"正確にこなす"},
+ {D:"前に出る",I:"目立ちたい",S:"目立ちたくない",C:"一人で集中したい"},
+];
+const REPORT={
+ D:{label:"D（主導）",motive:"勝利・達成",feat:"決断が速い・単刀直入・競争心が強い・スピード優先",
+   strength:"決断力と推進力。断られても引きずらず数を回せる",pitfall:"相手を急かす・世間話を飛ばす・一方的に話しがち",
+   fp:"アプローチを最速で回すのが武器。結論ファースト＋具体的メリットで攻める。ただし『相手のペースに合わせる』を1つ足す",
+   fix:"つい被せたくなったら“3秒黙る”。相手に話させる間を作る"},
+ I:{label:"I（感化）",motive:"承認・楽しみ",feat:"社交的・表情豊か・感情で動く・話すのが得意",
+   strength:"人に好かれ、関係構築が速い。場をつくれる",pitfall:"詰めが甘い・数字や手順が後回し・ノリで終わる",
+   fp:"ワクワクする未来・共感で心を動かす。関係値の高さを武器に。ただし『アポ→次アクションの締め』を仕組みで補う",
+   fix:"感覚で押し切る前に“数字を1つ”入れる（件数・期限）"},
+ S:{label:"S（安定）",motive:"安全・調和",feat:"穏やか・聞き上手・変化が苦手・コツコツ続く",
+   strength:"傾聴力と安心感。信頼されやすく継続できる",pitfall:"提案・クロージングで引く・即決を避ける・自分から動きにくい",
+   fp:"信頼ベースで丁寧に。安心→実例→少しずつ。ただし『小さく動く』ハードルを下げる（8割失敗前提を思い出す）",
+   fix:"つい前置きが長くなったら“結論から入る”を意識"},
+ C:{label:"C（慎重）",motive:"正確・品質",feat:"分析的・慎重・ルール重視・論理で判断",
+   strength:"正確さと準備の丁寧さ。論理で説明できる",pitfall:"考えすぎて動けない・完璧を求めて遅い・感情面が薄い",
+   fp:"根拠・データ・比較で信頼を勝ち取る。商品理解の強さが武器。ただし『まず出す』を優先（準備100点を待たない）",
+   fix:"行き詰まったら“資料を閉じて笑顔”。人に向き合う時間を作る"},
+};
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const form=document.getElementById("quiz");
+Q.forEach((q,idx)=>{
+  const n=idx+1;
+  const opts=shuffle(DIMS.map(d=>({dim:d,text:q[d]})));
+  const div=document.createElement("div");div.className="q";
+  let html=`<span class="qno">Q${n}</span>`+
+    `<div class="pickhead"><div class="h most">最も適している</div><div class="h least">最も遠い</div><div></div></div>`;
+  opts.forEach(o=>{
+    html+=`<div class="opt" id="opt_${n}_${o.dim}">`+
+      `<div class="cell"><input type="radio" class="most" name="most_${n}" value="${o.dim}" onchange="syncPair(${n})"></div>`+
+      `<div class="cell"><input type="radio" class="least" name="least_${n}" value="${o.dim}" onchange="syncPair(${n})"></div>`+
+      `<div class="txt">${o.text}</div></div>`;
+  });
+  div.innerHTML=html;form.appendChild(div);
+});
+
+function syncPair(n){
+  const most=document.querySelector(`input[name=most_${n}]:checked`);
+  const least=document.querySelector(`input[name=least_${n}]:checked`);
+  if(most&&least&&most.value===least.value){least.checked=false;}
+  // ハイライト更新
+  DIMS.forEach(d=>{const row=document.getElementById(`opt_${n}_${d}`);if(row){row.classList.remove("is-most","is-least");}});
+  const m=document.querySelector(`input[name=most_${n}]:checked`);
+  const l=document.querySelector(`input[name=least_${n}]:checked`);
+  if(m){const r=document.getElementById(`opt_${n}_${m.value}`);if(r)r.classList.add("is-most");}
+  if(l){const r=document.getElementById(`opt_${n}_${l.value}`);if(r)r.classList.add("is-least");}
+  updateProgress();
+}
+function updateProgress(){
+  let done=0;
+  for(let n=1;n<=Q.length;n++){if(document.querySelector(`input[name=most_${n}]:checked`)&&document.querySelector(`input[name=least_${n}]:checked`))done++;}
+  document.getElementById("progress").textContent=`回答 ${done} / ${Q.length}`;
+}
+updateProgress();
+
+function diagnose(){
+  const err=document.getElementById("err");err.textContent="";
+  const most={D:0,I:0,S:0,C:0},least={D:0,I:0,S:0,C:0};
+  for(let n=1;n<=Q.length;n++){
+    const m=document.querySelector(`input[name=most_${n}]:checked`);
+    const l=document.querySelector(`input[name=least_${n}]:checked`);
+    if(!m||!l){err.textContent=`未回答の問があります（Q${n}）。最も適している／最も遠いを両方選んでください。`;
+      document.querySelectorAll(".q")[n-1].scrollIntoView({behavior:"smooth",block:"center"});return;}
+    most[m.value]++;least[l.value]++;
+  }
+  const net={};DIMS.forEach(d=>net[d]=most[d]-least[d]);
+  const order=[...DIMS].sort((a,b)=>net[b]-net[a]||most[b]-most[a]);
+  const primary=order[0],second=order[1];
+
+  document.getElementById("rname").textContent=
+    (document.getElementById("uname").value?`氏名：${document.getElementById("uname").value}　`:"")+`診断日：${new Date().toLocaleDateString("ja-JP")}`;
+  document.getElementById("tcode").textContent=primary+second;
+  document.getElementById("tbig").textContent=`${primary}${second}タイプ`;
+  document.getElementById("tsub").textContent=`主：${REPORT[primary].label} ／ 副：${REPORT[second].label}`;
+  document.getElementById("tmotive").textContent=`核心動機：${REPORT[primary].motive}`;
+
+  const maxMost=Math.max(...DIMS.map(d=>most[d]),1);
+  document.getElementById("bars").innerHTML=DIMS.map(d=>
+    `<div class="bar"><div class="name ${d}">${REPORT[d].label}</div>`+
+    `<div class="track"><div class="fill ${d}" style="width:${Math.round(most[d]/maxMost*100)}%"></div></div>`+
+    `<div class="val">◎${most[d]} △${least[d]} / 差${net[d]>=0?"+":""}${net[d]}</div></div>`).join("");
+
+  const r=REPORT[primary];
+  document.getElementById("rmain").innerHTML=
+    `<div class="sec-title">${primary}${second}タイプ（${REPORT[primary].label}×${REPORT[second].label}）のあなた</div>`+
+    `<div class="kv"><b>行動の特徴</b><span>${r.feat}</span></div>`+
+    `<div class="kv"><b>強み</b><span>${r.strength}</span></div>`+
+    `<div class="kv"><b>つまずきやすい点</b><span>${r.pitfall}</span></div>`+
+    `<div class="kv"><b>FP活動での活かし方</b><span>${r.fp}</span></div>`+
+    `<div class="kv"><b>弱みの補い方</b><span>${r.fix}</span></div>`+
+    `<div class="kv"><b>副タイプ ${REPORT[second].label}</b><span>${REPORT[second].feat}。${REPORT[second].strength}も併せ持つ</span></div>`;
+
+  document.getElementById("result").style.display="block";
+  document.getElementById("result").scrollIntoView({behavior:"smooth"});
+}
+function reset_(){
+  document.querySelectorAll(".opt").forEach(o=>o.classList.remove("is-most","is-least"));
+  document.getElementById("quiz").querySelectorAll("input").forEach(i=>i.checked=false);
+  document.getElementById("result").style.display="none";updateProgress();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200);}
+
+// ===== PDFで保存（印刷でなくファイルとしてダウンロード） =====
+async function savePdf(){
+  const el=document.getElementById("result");
+  const name=document.getElementById("uname").value.trim();
+  const fname=`DISC診断_${name||"結果"}_${new Date().toISOString().slice(0,10)}.pdf`;
+  if(!window.html2canvas||!(window.jspdf&&window.jspdf.jsPDF)){
+    toast("オフラインのため印刷ダイアログで保存します");
+    setTimeout(()=>window.print(),400);return;
+  }
+  toast("PDFを作成中…");
+  el.querySelectorAll(".noprint").forEach(n=>n.style.display="none");
+  try{
+    const canvas=await html2canvas(el,{scale:2,backgroundColor:"#ffffff",useCORS:true});
+    const img=canvas.toDataURL("image/jpeg",0.95);
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF("p","mm","a4");
+    const pw=210,ph=297,margin=8;
+    const iw=pw-margin*2;
+    const ih=canvas.height*iw/canvas.width;
+    let heightLeft=ih,position=margin;
+    pdf.addImage(img,"JPEG",margin,position,iw,ih);
+    heightLeft-=(ph-margin*2);
+    while(heightLeft>0){
+      position=margin-(ih-heightLeft);
+      pdf.addPage();
+      pdf.addImage(img,"JPEG",margin,position,iw,ih);
+      heightLeft-=(ph-margin*2);
+    }
+    pdf.save(fname);
+    toast("保存しました");
+  }catch(e){
+    toast("作成に失敗。印刷で保存します");setTimeout(()=>window.print(),400);
+  }finally{
+    el.querySelectorAll(".noprint").forEach(n=>n.style.display="");
+  }
+}
+</script>
+</body>
+</html>
