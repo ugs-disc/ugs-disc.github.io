@@ -1,6 +1,6 @@
 # UGS DISC診断ツール
 
-公開URL: **https://kobayashi-glitch.github.io/ugs-disc/**
+公開URL: **https://ugs-disc.github.io/**
 
 PC・スマホのブラウザで開ける単一HTMLの診断ツール。強制選択24問 →
 D/I/S/C集計 → 2文字タイプ（例：DC）判定 → 結果レポート → PDF保存。
