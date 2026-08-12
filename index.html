@@ -256,13 +256,22 @@ function diagnose(){
   }
   const net={};DIMS.forEach(d=>net[d]=most[d]-least[d]);
   const order=[...DIMS].sort((a,b)=>net[b]-net[a]||most[b]-most[a]);
-  const primary=order[0],second=order[1];
+  const primary=order[0];
+  // DISCの輪（D-I-S-C-D）で隣り合う2タイプのみを2文字目候補にする（対角＝D-S・I-Cは出さない）
+  const NEIGHBORS={D:["I","C"],I:["D","S"],S:["I","C"],C:["S","D"]};
+  const [n1,n2]=NEIGHBORS[primary];
+  let second=null;
+  if(net[n1]!==net[n2]){
+    second=net[n1]>net[n2]?n1:n2;
+  }else if(most[n1]!==most[n2]){
+    second=most[n1]>most[n2]?n1:n2;
+  } // 隣接2タイプの数値が同一なら2文字目は決めず単独タイプにする
 
   document.getElementById("rname").textContent=
     (document.getElementById("uname").value?`氏名：${document.getElementById("uname").value}　`:"")+`診断日：${new Date().toLocaleDateString("ja-JP")}`;
-  document.getElementById("tcode").textContent=primary+second;
-  document.getElementById("tbig").textContent=`${primary}${second}タイプ`;
-  document.getElementById("tsub").textContent=`主：${REPORT[primary].label} ／ 副：${REPORT[second].label}`;
+  document.getElementById("tcode").textContent=primary+(second||"");
+  document.getElementById("tbig").textContent=`${primary}${second||""}タイプ`;
+  document.getElementById("tsub").textContent=second?`主：${REPORT[primary].label} ／ 副：${REPORT[second].label}`:`${REPORT[primary].label}タイプ（単独）`;
   document.getElementById("tmotive").textContent=`核心動機：${REPORT[primary].motive}`;
 
   const maxMost=Math.max(...DIMS.map(d=>most[d]),1);
@@ -273,13 +282,13 @@ function diagnose(){
 
   const r=REPORT[primary];
   document.getElementById("rmain").innerHTML=
-    `<div class="sec-title">${primary}${second}タイプ（${REPORT[primary].label}×${REPORT[second].label}）のあなた</div>`+
+    `<div class="sec-title">${primary}${second||""}タイプ（${second?`${REPORT[primary].label}×${REPORT[second].label}`:`${REPORT[primary].label}単独`}）のあなた</div>`+
     `<div class="kv"><b>行動の特徴</b><span>${r.feat}</span></div>`+
     `<div class="kv"><b>強み</b><span>${r.strength}</span></div>`+
     `<div class="kv"><b>つまずきやすい点</b><span>${r.pitfall}</span></div>`+
     `<div class="kv"><b>FP活動での活かし方</b><span>${r.fp}</span></div>`+
     `<div class="kv"><b>弱みの補い方</b><span>${r.fix}</span></div>`+
-    `<div class="kv"><b>副タイプ ${REPORT[second].label}</b><span>${REPORT[second].feat}。${REPORT[second].strength}も併せ持つ</span></div>`;
+    (second?`<div class="kv"><b>副タイプ ${REPORT[second].label}</b><span>${REPORT[second].feat}。${REPORT[second].strength}も併せ持つ</span></div>`:"");
 
   document.getElementById("result").style.display="block";
   document.getElementById("result").scrollIntoView({behavior:"smooth"});
